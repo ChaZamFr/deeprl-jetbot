@@ -1,0 +1,80 @@
+import argparse
+from learning_racer.commands.subcommand import command_demo, command_train
+from learning_racer.config import ConfigReader
+from learning_racer.utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+__version__ = '1.7.1'
+
+parser = argparse.ArgumentParser(description='Learning Racer Simulation command.')
+parser.add_argument('--version', action='version', version='learning_racer_sim version {} .'.format(__version__))
+subparser = parser.add_subparsers()
+
+# train subcommand.
+parser_train = subparser.add_parser('train', help='see `train -h`')
+parser_train.add_argument('-config', '--config-path', help='Path to a config.yml path.',
+                          default='config.yml', type=str)
+parser_train.add_argument('-device', '--device', help='torch device {"cpu" | "cuda"}',
+                          default='cuda', type=str)
+parser_train.add_argument('-robot', '--robot-driver', help='choose robot driver from {"jetbot", "jetracer", "sim"}',
+                          default='sim', type=str)
+parser_train.add_argument('-steps', '--time-steps', help='total step.',
+                          default='5000', type=int)
+parser_train.add_argument('-save_freq', '--save-freq-steps', help='number of step for each checkpoints.',
+                          default='1000', type=int)
+parser_train.add_argument('-save_path', '--save-model-path', help='Model save path.',
+                          default='model_log_sim', type=str)
+parser_train.add_argument('-s', '--save', help='save model file name.',
+                          default='model_sim', type=str)
+parser_train.add_argument('-l', '--load-model', help='Define pre-train model path.',
+                          default='', type=str)
+parser_train.add_argument('-log', '--tb-log', help='Define logging directory name, If not set, Do not logging.',
+                          default=None, type=str)
+parser_train.add_argument('-sadr', '--sim_addr', help='Simulator Address',
+                          default='localhost', type=str)
+parser_train.add_argument('-sp', '--sim_port', help='Simulator Port.',
+                          default=9090, type=int)
+parser_train.set_defaults(handler=command_train)
+
+# demo subcommand.
+parser_demo = subparser.add_parser('demo', help='see `demo -h`')
+parser_demo.add_argument('-config', '--config-path', help='Path to a config.yml path.',
+                         default='config.yml', type=str)
+parser_demo.add_argument('-model', '--model-path', help='Path to a trained vae model path.',
+                         default='model', type=str)
+parser_demo.add_argument('-device', '--device', help='torch device {"cpu" | "cuda"}',
+                         default='cuda', type=str)
+parser_demo.add_argument('-robot', '--robot-driver', help='choose robot driver',
+                         default='jetbot', type=str)
+parser_demo.add_argument('-steps', '--time-steps', help='total step.',
+                         default='5000', type=int)
+parser_demo.add_argument('-user', '--sim-user', help='Define user name for own car that showed DonkeySim',
+                         default='anonymous', type=str)
+parser_demo.add_argument('-car', '--sim-car', help='Define car model type for own car that showed DonkeySim',
+                         default='Donkey', type=str)
+parser_demo.add_argument('-log', '--tb-log', help='Define logging directory name, If not set, Do not logging.',
+                         default=None, type=str)
+parser_demo.add_argument('-sadr', '--sim_addr', help='Simulator Address',
+                          default='localhost', type=str)
+parser_demo.add_argument('-sp', '--sim_port', help='Simulator Port.',
+                          default=9090, type=int)
+parser_demo.set_defaults(handler=command_demo)
+
+
+def racer_sim_func():
+    config = ConfigReader()
+    args = parser.parse_args()
+    try:
+        config.load(args.config_path)
+    except FileNotFoundError as e:
+        logger.error("Config file not found. {}".format(args.config_path))
+    logger.info('Start learning racer :{}'.format(__version__))
+    if hasattr(args, 'handler'):
+        args.handler(args, config)
+    else:
+        parser.print_help()
+
+
+if __name__ == '__main__':
+    racer_sim_func()
